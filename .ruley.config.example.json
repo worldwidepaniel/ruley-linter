@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "maxNesting": 5,
+    "maxCssFiles": 1,
+    "allowCdnFonts": false,
+    "allowInlineFont": false,
+    "allowStyleTags": false,
+    "allowExternalLinks": false,
+    "requireLazyClassForImages": true
+  },
+  "tagValidators": [
+    {
+      "name": "maxAltLength",
+      "type": "attributeLength",
+      "value": 150,
+      "allowedTags": ["img", "video"]
+    },
+    {
+      "name": "dataOriginal",
+      "type": "requiredAttribute",
+      "allowedTags": ["img"]
+    },
+    {
+      "name": "allowedImgSrcs",
+      "type": "allowedAttributeValues",
+      "value": {
+        "target": "data-original",
+        "value": ["addr1", "addr2"]
+      },
+      "allowedTags": ["img"]
+    },
+    {
+      "name": "requiredSrcValue",
+      "type": "requiredAttributeValue",
+      "value": {
+        "target": "src",
+        "value": "https://example.com/blank.gif"
+      },
+      "allowedTags": ["img"]
+    }
+  ]
+}
