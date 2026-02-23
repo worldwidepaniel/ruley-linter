@@ -3,59 +3,65 @@ package main
 import (
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 
 	"golang.org/x/net/html"
+
+	"ruley-linter/internal/config"
+	"ruley-linter/internal/validator"
 )
 
-type tagValidator struct {
-	ErrorMessage   string
-	ValidationFunc func(validator *tagValidator, node *html.Node) bool
-	ApplicableTags map[string]bool
-}
+var validators []validator.TagValidator
 
-var dataOriginalValidator = tagValidator{
-	ErrorMessage: "Tag should have data-orignal attribute",
-	ValidationFunc: func(v *tagValidator, node *html.Node) bool {
-		hasDataOrignalAttr := slices.ContainsFunc(node.Attr, func(attr html.Attribute) bool {
-			return attr.Key == "data-orignal"
-		})
-		return hasDataOrignalAttr
-	},
-	ApplicableTags: map[string]bool{"img": true, "span": true},
-}
-
-var validators = []tagValidator{dataOriginalValidator}
-
-func traverse(node *html.Node) {
-	for n := range node.Descendants() {
-		if n.Type == html.TextNode {
-			continue
+func traverse(n *html.Node, depth int) {
+	switch n.Type {
+	case html.ElementNode:
+		if depth > 5 {
+			fmt.Printf("Depth level exceeded. Max depth level is 5, current depth level => %v\n", depth)
 		}
-		fmt.Printf("%v => \n", n.Data)
-		for _, validator := range validators {
-			if !validator.ApplicableTags[n.Data] {
-				break
-			}
-			hasTagPassedValidation := validator.ValidationFunc(&validator, n)
-			if !hasTagPassedValidation {
-				fmt.Printf("\t %v \n", validator.ErrorMessage)
+		for i := range validators {
+			if validators[i].ApplicableTags[n.Data] {
+				isValid := validators[i].ValidationFunc(n)
+
+				if !isValid {
+					fmt.Printf("[Validation errror] Tag <%s>: %s\n", n.Data, validators[i].ErrorMessage)
+				}
 			}
 		}
+
+	case html.TextNode:
+		return
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		traverse(c, depth+1)
 	}
 }
 
 func main() {
-	htmlFileContent, err := os.ReadFile("./test-files/invalid.html")
+	cfg, err := config.Load(".ruley.config.json")
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error while loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	validators, err = cfg.BuildValidators()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error while building validators: %v\n", err)
+		os.Exit(1)
+	}
+
+	htmlFileContent, err := os.ReadFile("./test-files/valid.html")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error while loading html file: %v\n", err)
+		os.Exit(1)
 	}
 
 	htmlAST, err := html.Parse(strings.NewReader(string(htmlFileContent)))
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error while linting htmlAST: %v\n", err)
+		os.Exit(1)
 	}
 
-	traverse(htmlAST.FirstChild.FirstChild.NextSibling)
+	traverse(htmlAST.FirstChild.FirstChild.NextSibling.NextSibling, 0)
 }

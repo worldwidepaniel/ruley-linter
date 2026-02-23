@@ -3,7 +3,7 @@
     "maxNesting": 5,
     "maxCssFiles": 1,
     "allowCdnFonts": false,
-    "allowInlineFont": false,
+    "allowInlineStyles": false,
     "allowStyleTags": false,
     "allowExternalLinks": false,
     "requireLazyClassForImages": true
@@ -11,18 +11,24 @@
   "tagValidators": [
     {
       "name": "maxAltLength",
-      "type": "attributeLength",
-      "value": 150,
+      "type": "maxLength",
+      "value": {
+        "target": "alt",
+        "value": 150
+      },
       "allowedTags": ["img", "video"]
     },
     {
       "name": "dataOriginal",
       "type": "requiredAttribute",
+      "value": {
+        "value": "data-original"
+      },
       "allowedTags": ["img"]
     },
     {
       "name": "allowedImgSrcs",
-      "type": "allowedAttributeValues",
+      "type": "allowedValues",
       "value": {
         "target": "data-original",
         "value": ["addr1", "addr2"]
@@ -31,10 +37,10 @@
     },
     {
       "name": "requiredSrcValue",
-      "type": "requiredAttributeValue",
+      "type": "allowedValues",
       "value": {
         "target": "src",
-        "value": "https://example.com/blank.gif"
+        "value": ["https://example.com/blank.gif"]
       },
       "allowedTags": ["img"]
     }
