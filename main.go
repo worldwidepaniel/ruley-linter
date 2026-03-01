@@ -11,30 +11,39 @@ import (
 	"ruley-linter/internal/validator"
 )
 
-var validators []validator.TagValidator
+var (
+	tagValidators     []validator.TagValidator
+	textNodeValidator validator.TextNodeValidator
+)
 
-func traverse(n *html.Node, depth int) {
+func traverse(n *html.Node, cfg *config.Config, depth int) {
 	switch n.Type {
 	case html.ElementNode:
-		if depth > 5 {
+		if depth > cfg.Meta.MaxNesting {
 			fmt.Printf("Depth level exceeded. Max depth level is 5, current depth level => %v\n", depth)
 		}
-		for i := range validators {
-			if validators[i].ApplicableTags[n.Data] {
-				isValid := validators[i].ValidationFunc(n)
+		for i := range tagValidators {
+			if tagValidators[i].ApplicableTags[n.Data] {
+				isValid := tagValidators[i].ValidationFunc(n)
 
 				if !isValid {
-					fmt.Printf("[Validation errror] Tag <%s>: %s\n", n.Data, validators[i].ErrorMessage)
+					fmt.Printf("[Validation errror] Tag <%s>: %s\n", n.Data, tagValidators[i].ErrorMessage)
 				}
 			}
 		}
 
 	case html.TextNode:
-		return
+		if len(strings.TrimSpace(n.Data)) != 0 {
+			isValid := textNodeValidator.ValidationFunc(n)
+
+			if !isValid {
+				fmt.Println(textNodeValidator.ErrorMessage)
+			}
+		}
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		traverse(c, depth+1)
+		traverse(c, cfg, depth+1)
 	}
 }
 
@@ -45,7 +54,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	validators, err = cfg.BuildValidators()
+	tagValidators, textNodeValidator, err = cfg.BuildValidators()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while building validators: %v\n", err)
 		os.Exit(1)
@@ -63,5 +72,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	traverse(htmlAST.FirstChild.FirstChild.NextSibling.NextSibling, 0)
+	traverse(htmlAST.FirstChild.FirstChild.NextSibling.NextSibling, cfg, 0)
 }

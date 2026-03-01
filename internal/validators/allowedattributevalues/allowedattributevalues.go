@@ -1,4 +1,4 @@
-package allowedvalues
+package allowedattributevalues
 
 import (
 	"fmt"

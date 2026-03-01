@@ -8,6 +8,11 @@ type TagValidator struct {
 	ApplicableTags map[string]bool
 }
 
+type TextNodeValidator struct {
+	ErrorMessage   string
+	ValidationFunc func(node *html.Node) bool
+}
+
 func New(tags []string, errorMessage string, validationFunc func(*html.Node) bool) TagValidator {
 	applicableTagsMap := make(map[string]bool, len(tags))
 	for _, tag := range tags {
@@ -18,5 +23,12 @@ func New(tags []string, errorMessage string, validationFunc func(*html.Node) boo
 		ErrorMessage:   errorMessage,
 		ValidationFunc: validationFunc,
 		ApplicableTags: applicableTagsMap,
+	}
+}
+
+func NewTextNode(errorMessage string, validationFunc func(*html.Node) bool) TextNodeValidator {
+	return TextNodeValidator{
+		ErrorMessage:   errorMessage,
+		ValidationFunc: validationFunc,
 	}
 }

@@ -12,6 +12,4 @@ Example config can be found in the `.ruley.config.example.json`
 
 ## TODO
 
-- Implement full DOM traversal
-- Implement reading from .ruley.config.json
 - Implement plugin system, ie. using (https://github.com/hashicorp/go-plugin)[https://github.com/hashicorp/go-plugin]

@@ -1,12 +1,7 @@
 {
   "meta": {
     "maxNesting": 5,
-    "maxCssFiles": 1,
-    "allowCdnFonts": false,
-    "allowInlineStyles": false,
-    "allowStyleTags": false,
-    "allowExternalLinks": false,
-    "requireLazyClassForImages": true
+    "maxCssFiles": 1
   },
   "tagValidators": [
     {
@@ -28,7 +23,7 @@
     },
     {
       "name": "allowedImgSrcs",
-      "type": "allowedValues",
+      "type": "allowedAttributeValues",
       "value": {
         "target": "data-original",
         "value": ["addr1", "addr2"]
@@ -37,12 +32,16 @@
     },
     {
       "name": "requiredSrcValue",
-      "type": "allowedValues",
+      "type": "allowedAttributeValues",
       "value": {
         "target": "src",
         "value": ["https://example.com/blank.gif"]
       },
       "allowedTags": ["img"]
     }
-  ]
+  ],
+  "textNodeValidator": {
+    "name": "No abbreviations",
+    "value": "/[A-Z]\\w+/g"
+  }
 }
