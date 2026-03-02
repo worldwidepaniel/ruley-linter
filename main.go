@@ -8,26 +8,28 @@ import (
 	"golang.org/x/net/html"
 
 	"ruley-linter/internal/config"
+	"ruley-linter/internal/flags"
 	"ruley-linter/internal/validator"
 )
 
 var (
 	tagValidators     []validator.TagValidator
 	textNodeValidator validator.TextNodeValidator
+	validationErrors  []string
 )
 
 func traverse(n *html.Node, cfg *config.Config, depth int) {
 	switch n.Type {
 	case html.ElementNode:
 		if depth > cfg.Meta.MaxNesting {
-			fmt.Printf("Depth level exceeded. Max depth level is 5, current depth level => %v\n", depth)
+			validationErrors = append(validationErrors, fmt.Sprintf("Depth level exceeded. Max depth level is 5, current depth level => %v\n", depth))
 		}
 		for i := range tagValidators {
 			if tagValidators[i].ApplicableTags[n.Data] {
 				isValid := tagValidators[i].ValidationFunc(n)
 
 				if !isValid {
-					fmt.Printf("[Validation errror] Tag <%s>: %s\n", n.Data, tagValidators[i].ErrorMessage)
+					validationErrors = append(validationErrors, fmt.Sprintf("[Validation errror] Tag <%s>: %s\n", n.Data, tagValidators[i].ErrorMessage))
 				}
 			}
 		}
@@ -37,7 +39,7 @@ func traverse(n *html.Node, cfg *config.Config, depth int) {
 			isValid := textNodeValidator.ValidationFunc(n)
 
 			if !isValid {
-				fmt.Println(textNodeValidator.ErrorMessage)
+				validationErrors = append(validationErrors, textNodeValidator.ErrorMessage)
 			}
 		}
 	}
@@ -48,7 +50,9 @@ func traverse(n *html.Node, cfg *config.Config, depth int) {
 }
 
 func main() {
-	cfg, err := config.Load(".ruley.config.json")
+	configPath, filePath := flags.Init()
+
+	cfg, err := config.Load(*configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while loading config: %v\n", err)
 		os.Exit(1)
@@ -60,7 +64,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	htmlFileContent, err := os.ReadFile("./test-files/valid.html")
+	htmlFileContent, err := os.ReadFile(*filePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while loading html file: %v\n", err)
 		os.Exit(1)
@@ -73,4 +77,11 @@ func main() {
 	}
 
 	traverse(htmlAST.FirstChild.FirstChild.NextSibling.NextSibling, cfg, 0)
+	if len(validationErrors) != 0 {
+		fmt.Fprintf(os.Stderr, "Encountered following errors while linting: \n")
+		for _, error := range validationErrors {
+			fmt.Fprintf(os.Stderr, "\t - %v\n", error)
+		}
+		os.Exit(1)
+	}
 }
